@@ -100,10 +100,7 @@ public struct ForEachStore<
   {
     self.data = store.state.value
     self.content = {
-      WithViewStore(
-        store.scope(state: { $0.ids }),
-        removeDuplicates: areOrderedSetsDuplicates
-      ) { viewStore in
+      WithViewStore(store, observe: { $0.ids }, removeDuplicates: isDuplicate) { viewStore in
         ForEach(viewStore.state, id: \.self) { id -> EachContent in
           // NB: We cache elements here to avoid a potential crash where SwiftUI may re-evaluate
           //     views for elements no longer in the collection.
@@ -129,7 +126,7 @@ public struct ForEachStore<
   }
 }
 
-private func areOrderedSetsDuplicates<ID: Hashable>(lhs: OrderedSet<ID>, rhs: OrderedSet<ID>)
+private func isDuplicate<ID: Hashable>(lhs: OrderedSet<ID>, rhs: OrderedSet<ID>)
   -> Bool
 {
   var lhs = lhs

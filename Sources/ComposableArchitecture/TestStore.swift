@@ -170,7 +170,7 @@
   /// wait longer than the 0.5 seconds, because if it wasn't and it delivered an action when we did
   /// not expect it would cause a test failure.
   ///
-  public final class TestStore<State, ScopedState, Action, ScopedAction, Environment> {
+  public final class TestStore<ViewState, ScopedState, Action, ScopedAction, Environment> {
     /// The current environment.
     ///
     /// The environment can be modified throughout a test store's lifecycle in order to influence
@@ -199,7 +199,7 @@
     /// When read from a trailing closure assertion in ``send(_:_:file:line:)-7vwv9`` or
     /// ``receive(_:timeout:_:file:line:)-88eyr``, it will equal the `inout` state passed to the
     /// closure.
-    public private(set) var state: State
+    public private(set) var state: ViewState
 
     /// The timeout to await for in-flight effects.
     ///
@@ -212,19 +212,19 @@
     private let fromScopedAction: (ScopedAction) -> Action
     private var line: UInt
     private var inFlightEffects: Set<LongLivingEffect> = []
-    var receivedActions: [(action: Action, state: State)] = []
-    private let reducer: Reducer<State, Action, Environment>
-    private var store: Store<State, TestAction>!
-    private let toScopedState: (State) -> ScopedState
+    var receivedActions: [(action: Action, state: ViewState)] = []
+    private let reducer: Reducer<ViewState, Action, Environment>
+    private var store: Store<ViewState, TestAction>!
+    private let toScopedState: (ViewState) -> ScopedState
 
     private init(
       environment: Environment,
       file: StaticString,
       fromScopedAction: @escaping (ScopedAction) -> Action,
-      initialState: State,
+      initialState: ViewState,
       line: UInt,
-      reducer: Reducer<State, Action, Environment>,
-      toScopedState: @escaping (State) -> ScopedState
+      reducer: Reducer<ViewState, Action, Environment>,
+      toScopedState: @escaping (ViewState) -> ScopedState
     ) {
       self.environment = environment
       self.file = file
@@ -237,7 +237,7 @@
 
       self.store = Store(
         initialState: initialState,
-        reducer: Reducer<State, TestAction, Void> { [unowned self] state, action, _ in
+        reducer: Reducer<ViewState, TestAction, Void> { [unowned self] state, action, _ in
           let effects: Effect<Action, Never>
           switch action.origin {
           case let .send(scopedAction):
@@ -412,7 +412,7 @@
     }
   }
 
-  extension TestStore where State == ScopedState, Action == ScopedAction {
+  extension TestStore where ViewState == ScopedState, Action == ScopedAction {
     /// Initializes a test store from an initial state, a reducer, and an initial environment.
     ///
     /// - Parameters:
@@ -420,8 +420,8 @@
     ///   - reducer: A reducer.
     ///   - environment: The environment to start the test from.
     public convenience init(
-      initialState: State,
-      reducer: Reducer<State, Action, Environment>,
+      initialState: ViewState,
+      reducer: Reducer<ViewState, Action, Environment>,
       environment: Environment,
       file: StaticString = #file,
       line: UInt = #line
@@ -870,7 +870,7 @@
     public func scope<S, A>(
       state toScopedState: @escaping (ScopedState) -> S,
       action fromScopedAction: @escaping (A) -> ScopedAction
-    ) -> TestStore<State, S, Action, A, Environment> {
+    ) -> TestStore<ViewState, S, Action, A, Environment> {
       .init(
         environment: self.environment,
         file: self.file,
@@ -891,7 +891,7 @@
     ///   view store state transformations.
     public func scope<S>(
       state toScopedState: @escaping (ScopedState) -> S
-    ) -> TestStore<State, S, Action, ScopedAction, Environment> {
+    ) -> TestStore<ViewState, S, Action, ScopedAction, Environment> {
       self.scope(state: toScopedState, action: { $0 })
     }
   }

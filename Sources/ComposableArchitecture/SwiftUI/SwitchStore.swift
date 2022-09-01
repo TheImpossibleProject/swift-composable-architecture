@@ -177,7 +177,9 @@ extension SwitchStore {
   {
     self.init(store: store) {
       let content = content().value
-      WithViewStore(store, removeDuplicates: { enumTag($0) == enumTag($1) }) { viewStore in
+      WithViewStore(
+        store, observe: { $0 }, removeDuplicates: { enumTag($0) == enumTag($1) }
+      ) { viewStore in
         if content.0.toCaseState(viewStore.state) != nil {
           content.0
         } else {
@@ -246,7 +248,9 @@ extension SwitchStore {
   {
     self.init(store: store) {
       let content = content().value
-      WithViewStore(store, removeDuplicates: { enumTag($0) == enumTag($1) }) { viewStore in
+      WithViewStore(
+        store, observe: { $0 }, removeDuplicates: { enumTag($0) == enumTag($1) }
+      ) { viewStore in
         if content.0.toCaseState(viewStore.state) != nil {
           content.0
         } else if content.1.toCaseState(viewStore.state) != nil {
@@ -335,7 +339,9 @@ extension SwitchStore {
   {
     self.init(store: store) {
       let content = content().value
-      WithViewStore(store, removeDuplicates: { enumTag($0) == enumTag($1) }) { viewStore in
+      WithViewStore(
+        store, observe: { $0 }, removeDuplicates: { enumTag($0) == enumTag($1) }
+      ) { viewStore in
         if content.0.toCaseState(viewStore.state) != nil {
           content.0
         } else if content.1.toCaseState(viewStore.state) != nil {
@@ -436,7 +442,9 @@ extension SwitchStore {
   {
     self.init(store: store) {
       let content = content().value
-      WithViewStore(store, removeDuplicates: { enumTag($0) == enumTag($1) }) { viewStore in
+      WithViewStore(
+        store, observe: { $0 }, removeDuplicates: { enumTag($0) == enumTag($1) }
+      ) { viewStore in
         if content.0.toCaseState(viewStore.state) != nil {
           content.0
         } else if content.1.toCaseState(viewStore.state) != nil {
@@ -554,7 +562,9 @@ extension SwitchStore {
   {
     self.init(store: store) {
       let content = content().value
-      WithViewStore(store, removeDuplicates: { enumTag($0) == enumTag($1) }) { viewStore in
+      WithViewStore(
+        store, observe: { $0 }, removeDuplicates: { enumTag($0) == enumTag($1) }
+      ) { viewStore in
         if content.0.toCaseState(viewStore.state) != nil {
           content.0
         } else if content.1.toCaseState(viewStore.state) != nil {
@@ -685,7 +695,9 @@ extension SwitchStore {
   {
     self.init(store: store) {
       let content = content().value
-      WithViewStore(store, removeDuplicates: { enumTag($0) == enumTag($1) }) { viewStore in
+      WithViewStore(
+        store, observe: { $0 }, removeDuplicates: { enumTag($0) == enumTag($1) }
+      ) { viewStore in
         if content.0.toCaseState(viewStore.state) != nil {
           content.0
         } else if content.1.toCaseState(viewStore.state) != nil {
@@ -829,7 +841,9 @@ extension SwitchStore {
   {
     self.init(store: store) {
       let content = content().value
-      WithViewStore(store, removeDuplicates: { enumTag($0) == enumTag($1) }) { viewStore in
+      WithViewStore(
+        store, observe: { $0 }, removeDuplicates: { enumTag($0) == enumTag($1) }
+      ) { viewStore in
         if content.0.toCaseState(viewStore.state) != nil {
           content.0
         } else if content.1.toCaseState(viewStore.state) != nil {
@@ -986,7 +1000,9 @@ extension SwitchStore {
   {
     self.init(store: store) {
       let content = content().value
-      WithViewStore(store, removeDuplicates: { enumTag($0) == enumTag($1) }) { viewStore in
+      WithViewStore(
+        store, observe: { $0 }, removeDuplicates: { enumTag($0) == enumTag($1) }
+      ) { viewStore in
         if content.0.toCaseState(viewStore.state) != nil {
           content.0
         } else if content.1.toCaseState(viewStore.state) != nil {
@@ -1156,7 +1172,9 @@ extension SwitchStore {
   {
     self.init(store: store) {
       let content = content().value
-      WithViewStore(store, removeDuplicates: { enumTag($0) == enumTag($1) }) { viewStore in
+      WithViewStore(
+        store, observe: { $0 }, removeDuplicates: { enumTag($0) == enumTag($1) }
+      ) { viewStore in
         if content.0.toCaseState(viewStore.state) != nil {
           content.0
         } else if content.1.toCaseState(viewStore.state) != nil {

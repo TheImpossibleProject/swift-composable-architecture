@@ -110,17 +110,17 @@ import SwiftUI
 ///   ViewStore(self.store).send(.buttonTapped)
 /// }
 /// ```
-public struct WithViewStore<State, Action, Content> {
-  private let content: (Store<State, Action>, _ prefix: String?) -> Content
-  let store: Store<State, Action>
+public struct WithViewStore<ViewState, ViewAction, Content> {
+  private let content: (Store<ViewState, ViewAction>, _ prefix: String?) -> Content
+  let store: Store<ViewState, ViewAction>
 
   #if DEBUG
     private var prefix: String?
   #endif
 
   fileprivate init(
-    store: Store<State, Action>,
-    content: @escaping (Store<State, Action>, _ prefix: String?) -> Content
+    store: Store<ViewState, ViewAction>,
+    content: @escaping (Store<ViewState, ViewAction>, _ prefix: String?) -> Content
   ) {
     self.content = content
     self.store = store
@@ -246,19 +246,105 @@ extension WithViewStore: View where Content: View {
   ///
   /// - Parameters:
   ///   - store: A store.
+  ///   - toViewState: A function that scopes to a slice of store state to observe in the view.
+  ///   - fromViewAction: A function that embeds view actions in store actions.
   ///   - isDuplicate: A function to determine when two `State` values are equal. When values are
   ///     equal, repeat view computations are removed,
   ///   - content: A function that can generate content from a view store.
-  public init<ObservedContent>(
+  public init<State, Action, ObservedContent>(
     _ store: Store<State, Action>,
-    removeDuplicates isDuplicate: @escaping (State, State) -> Bool,
+    observe toViewState: @escaping (State) -> ViewState,
+    send fromViewAction: @escaping (ViewAction) -> Action,
+    removeDuplicates isDuplicate: @escaping (ViewState, ViewState) -> Bool,
+    @ViewBuilder content: @escaping (ViewStore<ViewState, ViewAction>) -> ObservedContent,
     file: StaticString = #fileID,
-    line: UInt = #line,
-    @ViewBuilder content: @escaping (ViewStore<State, Action>) -> ObservedContent
+    line: UInt = #line
   )
   where
     Content == _ConditionalContent<
-      AnyView, _ObservedObjectViewStore<State, Action, ObservedContent>
+      AnyView, _ObservedObjectViewStore<ViewState, ViewAction, ObservedContent>
+    >
+  {
+    self.init(
+      store: store.scope(state: toViewState, action: fromViewAction),
+      content: { store, prefix in
+        if #available(iOS 14, macOS 11, tvOS 14, watchOS 7, *) {
+          return ViewBuilder.buildEither(
+            first: AnyView(
+              _StateObjectViewStore(
+                viewStore: ViewStore(store, removeDuplicates: isDuplicate),
+                content: content,
+                file: file,
+                line: line,
+                prefix: prefix
+              )
+            )
+          )
+        } else {
+          return ViewBuilder.buildEither(
+            second: _ObservedObjectViewStore(
+              viewStore: ViewStore(store, removeDuplicates: isDuplicate),
+              content: content,
+              file: file,
+              line: line,
+              prefix: prefix
+            )
+          )
+        }
+      }
+    )
+  }
+
+  /// Initializes a structure that transforms a store into an observable view store in order to
+  /// compute views from store state.
+  ///
+  /// - Parameters:
+  ///   - store: A store.
+  ///   - toViewState: A function that scopes to a slice of store state to observe in the view.
+  ///   - isDuplicate: A function to determine when two `State` values are equal. When values are
+  ///     equal, repeat view computations are removed,
+  ///   - content: A function that can generate content from a view store.
+  public init<State, ObservedContent>(
+    _ store: Store<State, ViewAction>,
+    observe toViewState: @escaping (State) -> ViewState,
+    removeDuplicates isDuplicate: @escaping (ViewState, ViewState) -> Bool,
+    @ViewBuilder content: @escaping (ViewStore<ViewState, ViewAction>) -> ObservedContent,
+    file: StaticString = #fileID,
+    line: UInt = #line
+  )
+  where
+    Content == _ConditionalContent<
+      AnyView, _ObservedObjectViewStore<ViewState, ViewAction, ObservedContent>
+    >
+  {
+    self.init(
+      store,
+      observe: toViewState,
+      send: { $0 },
+      removeDuplicates: isDuplicate,
+      content: content
+    )
+  }
+
+  /// Initializes a structure that transforms a store into an observable view store in order to
+  /// compute views from store state.
+  ///
+  /// - Parameters:
+  ///   - store: A store.
+  ///   - isDuplicate: A function to determine when two `State` values are equal. When values are
+  ///     equal, repeat view computations are removed,
+  ///   - content: A function that can generate content from a view store.
+  @available(*, deprecated, message: "Use the 'observe' parameter to explicitly observe state.")
+  public init<ObservedContent>(
+    _ store: Store<ViewState, ViewAction>,
+    removeDuplicates isDuplicate: @escaping (ViewState, ViewState) -> Bool,
+    @ViewBuilder content: @escaping (ViewStore<ViewState, ViewAction>) -> ObservedContent,
+    file: StaticString = #fileID,
+    line: UInt = #line
+  )
+  where
+    Content == _ConditionalContent<
+      AnyView, _ObservedObjectViewStore<ViewState, ViewAction, ObservedContent>
     >
   {
     self.init(
@@ -292,54 +378,117 @@ extension WithViewStore: View where Content: View {
   }
 }
 
-extension WithViewStore where State: Equatable, Content: View {
+extension WithViewStore where ViewState: Equatable, Content: View {
+  /// Initializes a structure that transforms a store into an observable view store in order to
+  /// compute views from equatable store state.
+  ///
+  /// - Parameters:
+  ///   - store: A store of equatable state.
+  ///   - toViewState: A function that scopes to a slice of store state to observe in the view.
+  ///   - fromViewAction: A function that embeds view actions in store actions.
+  ///   - content: A function that can generate content from a view store.
+  public init<State, Action, ObservedContent>(
+    _ store: Store<State, Action>,
+    observe toViewState: @escaping (State) -> ViewState,
+    send fromViewAction: @escaping (ViewAction) -> Action,
+    @ViewBuilder content: @escaping (ViewStore<ViewState, ViewAction>) -> ObservedContent,
+    file: StaticString = #fileID,
+    line: UInt = #line
+  )
+  where
+    Content == _ConditionalContent<
+      AnyView, _ObservedObjectViewStore<ViewState, ViewAction, ObservedContent>
+    >
+  {
+    self.init(
+      store,
+      observe: toViewState,
+      send: fromViewAction,
+      removeDuplicates: ==,
+      content: content,
+      file: file,
+      line: line
+    )
+  }
+
+  /// Initializes a structure that transforms a store into an observable view store in order to
+  /// compute views from equatable store state.
+  ///
+  /// - Parameters:
+  ///   - store: A store of equatable state.
+  ///   - toViewState: A function that scopes to a slice of store state to observe in the view.
+  ///   - content: A function that can generate content from a view store.
+  public init<State, ObservedContent>(
+    _ store: Store<State, ViewAction>,
+    observe toViewState: @escaping (State) -> ViewState,
+    @ViewBuilder content: @escaping (ViewStore<ViewState, ViewAction>) -> ObservedContent,
+    file: StaticString = #fileID,
+    line: UInt = #line
+  )
+  where
+    Content == _ConditionalContent<
+      AnyView, _ObservedObjectViewStore<ViewState, ViewAction, ObservedContent>
+    >
+  {
+    self.init(
+      store,
+      observe: toViewState,
+      removeDuplicates: ==,
+      content: content,
+      file: file,
+      line: line
+    )
+  }
+
   /// Initializes a structure that transforms a store into an observable view store in order to
   /// compute views from equatable store state.
   ///
   /// - Parameters:
   ///   - store: A store of equatable state.
   ///   - content: A function that can generate content from a view store.
+  @available(*, deprecated, message: "Use the 'observe' parameter to explicitly observe state.")
   public init<ObservedContent>(
-    _ store: Store<State, Action>,
+    _ store: Store<ViewState, ViewAction>,
+    @ViewBuilder content: @escaping (ViewStore<ViewState, ViewAction>) -> ObservedContent,
     file: StaticString = #fileID,
-    line: UInt = #line,
-    @ViewBuilder content: @escaping (ViewStore<State, Action>) -> ObservedContent
+    line: UInt = #line
   )
   where
     Content == _ConditionalContent<
-      AnyView, _ObservedObjectViewStore<State, Action, ObservedContent>
+      AnyView, _ObservedObjectViewStore<ViewState, ViewAction, ObservedContent>
     >
   {
-    self.init(store, removeDuplicates: ==, file: file, line: line, content: content)
+    self.init(store, removeDuplicates: ==, content: content, file: file, line: line)
   }
 }
 
-extension WithViewStore where State == Void, Content: View {
+extension WithViewStore where ViewState == Void, Content: View {
   /// Initializes a structure that transforms a store into an observable view store in order to
   /// compute views from void store state.
   ///
   /// - Parameters:
   ///   - store: A store of equatable state.
   ///   - content: A function that can generate content from a view store.
+  @available(*, deprecated, message: "Use the 'observe' parameter to explicitly ignore state.")
   public init<ObservedContent>(
-    _ store: Store<State, Action>,
+    _ store: Store<ViewState, ViewAction>,
+    @ViewBuilder content: @escaping (ViewStore<ViewState, ViewAction>) -> ObservedContent,
     file: StaticString = #fileID,
-    line: UInt = #line,
-    @ViewBuilder content: @escaping (ViewStore<State, Action>) -> ObservedContent
+    line: UInt = #line
   )
   where
     Content == _ConditionalContent<
-      AnyView, _ObservedObjectViewStore<State, Action, ObservedContent>
+      AnyView, _ObservedObjectViewStore<ViewState, ViewAction, ObservedContent>
     >
   {
-    self.init(store, removeDuplicates: ==, file: file, line: line, content: content)
+    self.init(store, removeDuplicates: ==, content: content, file: file, line: line)
   }
 }
 
-extension WithViewStore: DynamicViewContent where State: Collection, Content: DynamicViewContent {
-  public typealias Data = State
+extension WithViewStore: DynamicViewContent where ViewState: Collection, Content: DynamicViewContent {
+  public typealias Data = ViewState
 
-  public var data: State {
+  public var data: ViewState {
     self.store.state.value
   }
 }
@@ -404,13 +553,13 @@ extension WithViewStore: AccessibilityRotorContent where Content: AccessibilityR
      """
   )
   public init<ObservedContent>(
-    _ store: Store<State, Action>,
-    removeDuplicates isDuplicate: @escaping (State, State) -> Bool,
+    _ store: Store<ViewState, ViewAction>,
+    removeDuplicates isDuplicate: @escaping (ViewState, ViewState) -> Bool,
     file: StaticString = #fileID,
     line: UInt = #line,
-    @AccessibilityRotorContentBuilder content: @escaping (ViewStore<State, Action>) ->
+    @AccessibilityRotorContentBuilder content: @escaping (ViewStore<ViewState, ViewAction>) ->
       ObservedContent
-  ) where Content == _StateObjectViewStore<State, Action, ObservedContent> {
+  ) where Content == _StateObjectViewStore<ViewState, ViewAction, ObservedContent> {
     self.init(
       store: store,
       content: { store, prefix in
@@ -427,7 +576,7 @@ extension WithViewStore: AccessibilityRotorContent where Content: AccessibilityR
 }
 
 @available(iOS 15, macOS 12, tvOS 15, watchOS 8, *)
-extension WithViewStore where State: Equatable, Content: AccessibilityRotorContent {
+extension WithViewStore where ViewState: Equatable, Content: AccessibilityRotorContent {
   /// Initializes a structure that transforms a store into an observable view store in order to
   /// compute accessibility rotor content from equatable store state.
   ///
@@ -445,18 +594,18 @@ extension WithViewStore where State: Equatable, Content: AccessibilityRotorConte
      """
   )
   public init<ObservedContent>(
-    _ store: Store<State, Action>,
+    _ store: Store<ViewState, ViewAction>,
     file: StaticString = #fileID,
     line: UInt = #line,
-    @AccessibilityRotorContentBuilder content: @escaping (ViewStore<State, Action>) ->
+    @AccessibilityRotorContentBuilder content: @escaping (ViewStore<ViewState, ViewAction>) ->
       ObservedContent
-  ) where Content == _StateObjectViewStore<State, Action, ObservedContent> {
+  ) where Content == _StateObjectViewStore<ViewState, ViewAction, ObservedContent> {
     self.init(store, removeDuplicates: ==, file: file, line: line, content: content)
   }
 }
 
 @available(iOS 15, macOS 12, tvOS 15, watchOS 8, *)
-extension WithViewStore where State == Void, Content: AccessibilityRotorContent {
+extension WithViewStore where ViewState == Void, Content: AccessibilityRotorContent {
   /// Initializes a structure that transforms a store into an observable view store in order to
   /// compute accessibility rotor content from void store state.
   ///
@@ -474,12 +623,12 @@ extension WithViewStore where State == Void, Content: AccessibilityRotorContent 
      """
   )
   public init<ObservedContent>(
-    _ store: Store<State, Action>,
+    _ store: Store<ViewState, ViewAction>,
     file: StaticString = #fileID,
     line: UInt = #line,
-    @AccessibilityRotorContentBuilder content: @escaping (ViewStore<State, Action>) ->
+    @AccessibilityRotorContentBuilder content: @escaping (ViewStore<ViewState, ViewAction>) ->
       ObservedContent
-  ) where Content == _StateObjectViewStore<State, Action, ObservedContent> {
+  ) where Content == _StateObjectViewStore<ViewState, ViewAction, ObservedContent> {
     self.init(store, removeDuplicates: ==, file: file, line: line, content: content)
   }
 }
@@ -529,12 +678,12 @@ extension WithViewStore: Commands where Content: Commands {
        """
   )
   public init<ObservedContent>(
-    _ store: Store<State, Action>,
-    removeDuplicates isDuplicate: @escaping (State, State) -> Bool,
+    _ store: Store<ViewState, ViewAction>,
+    removeDuplicates isDuplicate: @escaping (ViewState, ViewState) -> Bool,
     file: StaticString = #fileID,
     line: UInt = #line,
-    @CommandsBuilder content: @escaping (ViewStore<State, Action>) -> ObservedContent
-  ) where Content == _StateObjectViewStore<State, Action, ObservedContent> {
+    @CommandsBuilder content: @escaping (ViewStore<ViewState, ViewAction>) -> ObservedContent
+  ) where Content == _StateObjectViewStore<ViewState, ViewAction, ObservedContent> {
     self.init(
       store: store,
       content: { store, prefix in
@@ -553,7 +702,7 @@ extension WithViewStore: Commands where Content: Commands {
 @available(iOS 14, macOS 11, tvOS 14, watchOS 7, *)
 @available(tvOS, unavailable)
 @available(watchOS, unavailable)
-extension WithViewStore where State: Equatable, Content: Commands {
+extension WithViewStore where ViewState: Equatable, Content: Commands {
   /// Initializes a structure that transforms a store into an observable view store in order to
   /// compute commands from equatable store state.
   ///
@@ -571,11 +720,11 @@ extension WithViewStore where State: Equatable, Content: Commands {
        """
   )
   public init<ObservedContent>(
-    _ store: Store<State, Action>,
+    _ store: Store<ViewState, ViewAction>,
     file: StaticString = #fileID,
     line: UInt = #line,
-    @CommandsBuilder content: @escaping (ViewStore<State, Action>) -> ObservedContent
-  ) where Content == _StateObjectViewStore<State, Action, ObservedContent> {
+    @CommandsBuilder content: @escaping (ViewStore<ViewState, ViewAction>) -> ObservedContent
+  ) where Content == _StateObjectViewStore<ViewState, ViewAction, ObservedContent> {
     self.init(store, removeDuplicates: ==, file: file, line: line, content: content)
   }
 }
@@ -583,7 +732,7 @@ extension WithViewStore where State: Equatable, Content: Commands {
 @available(iOS 14, macOS 11, tvOS 14, watchOS 7, *)
 @available(tvOS, unavailable)
 @available(watchOS, unavailable)
-extension WithViewStore where State == Void, Content: Commands {
+extension WithViewStore where ViewState == Void, Content: Commands {
   /// Initializes a structure that transforms a store into an observable view store in order to
   /// compute commands from void store state.
   ///
@@ -601,11 +750,11 @@ extension WithViewStore where State == Void, Content: Commands {
        """
   )
   public init<ObservedContent>(
-    _ store: Store<State, Action>,
+    _ store: Store<ViewState, ViewAction>,
     file: StaticString = #fileID,
     line: UInt = #line,
-    @CommandsBuilder content: @escaping (ViewStore<State, Action>) -> ObservedContent
-  ) where Content == _StateObjectViewStore<State, Action, ObservedContent> {
+    @CommandsBuilder content: @escaping (ViewStore<ViewState, ViewAction>) -> ObservedContent
+  ) where Content == _StateObjectViewStore<ViewState, ViewAction, ObservedContent> {
     self.init(store, removeDuplicates: ==, file: file, line: line, content: content)
   }
 }
@@ -654,12 +803,12 @@ extension WithViewStore: Scene where Content: Scene {
        """
   )
   public init<ObservedContent>(
-    _ store: Store<State, Action>,
-    removeDuplicates isDuplicate: @escaping (State, State) -> Bool,
+    _ store: Store<ViewState, ViewAction>,
+    removeDuplicates isDuplicate: @escaping (ViewState, ViewState) -> Bool,
     file: StaticString = #fileID,
     line: UInt = #line,
-    @SceneBuilder content: @escaping (ViewStore<State, Action>) -> ObservedContent
-  ) where Content == _StateObjectViewStore<State, Action, ObservedContent> {
+    @SceneBuilder content: @escaping (ViewStore<ViewState, ViewAction>) -> ObservedContent
+  ) where Content == _StateObjectViewStore<ViewState, ViewAction, ObservedContent> {
     self.init(
       store: store,
       content: { store, prefix in
@@ -676,7 +825,7 @@ extension WithViewStore: Scene where Content: Scene {
 }
 
 @available(iOS 14, macOS 11, tvOS 14, watchOS 7, *)
-extension WithViewStore where State: Equatable, Content: Scene {
+extension WithViewStore where ViewState: Equatable, Content: Scene {
   /// Initializes a structure that transforms a store into an observable view store in order to
   /// compute scenes from equatable store state.
   ///
@@ -694,17 +843,17 @@ extension WithViewStore where State: Equatable, Content: Scene {
        """
   )
   public init<ObservedContent>(
-    _ store: Store<State, Action>,
+    _ store: Store<ViewState, ViewAction>,
     file: StaticString = #fileID,
     line: UInt = #line,
-    @SceneBuilder content: @escaping (ViewStore<State, Action>) -> ObservedContent
-  ) where Content == _StateObjectViewStore<State, Action, ObservedContent> {
+    @SceneBuilder content: @escaping (ViewStore<ViewState, ViewAction>) -> ObservedContent
+  ) where Content == _StateObjectViewStore<ViewState, ViewAction, ObservedContent> {
     self.init(store, removeDuplicates: ==, file: file, line: line, content: content)
   }
 }
 
 @available(iOS 14, macOS 11, tvOS 14, watchOS 7, *)
-extension WithViewStore where State == Void, Content: Scene {
+extension WithViewStore where ViewState == Void, Content: Scene {
   /// Initializes a structure that transforms a store into an observable view store in order to
   /// compute scenes from void store state.
   ///
@@ -722,11 +871,11 @@ extension WithViewStore where State == Void, Content: Scene {
        """
   )
   public init<ObservedContent>(
-    _ store: Store<State, Action>,
+    _ store: Store<ViewState, ViewAction>,
     file: StaticString = #fileID,
     line: UInt = #line,
-    @SceneBuilder content: @escaping (ViewStore<State, Action>) -> ObservedContent
-  ) where Content == _StateObjectViewStore<State, Action, ObservedContent> {
+    @SceneBuilder content: @escaping (ViewStore<ViewState, ViewAction>) -> ObservedContent
+  ) where Content == _StateObjectViewStore<ViewState, ViewAction, ObservedContent> {
     self.init(store, removeDuplicates: ==, file: file, line: line, content: content)
   }
 }
@@ -773,12 +922,12 @@ extension WithViewStore: ToolbarContent where Content: ToolbarContent {
        """
   )
   public init<ObservedContent>(
-    _ store: Store<State, Action>,
-    removeDuplicates isDuplicate: @escaping (State, State) -> Bool,
+    _ store: Store<ViewState, ViewAction>,
+    removeDuplicates isDuplicate: @escaping (ViewState, ViewState) -> Bool,
     file: StaticString = #fileID,
     line: UInt = #line,
-    @ToolbarContentBuilder content: @escaping (ViewStore<State, Action>) -> ObservedContent
-  ) where Content == _StateObjectViewStore<State, Action, ObservedContent> {
+    @ToolbarContentBuilder content: @escaping (ViewStore<ViewState, ViewAction>) -> ObservedContent
+  ) where Content == _StateObjectViewStore<ViewState, ViewAction, ObservedContent> {
     self.init(
       store: store,
       content: { store, prefix in
@@ -795,7 +944,7 @@ extension WithViewStore: ToolbarContent where Content: ToolbarContent {
 }
 
 @available(iOS 14, macOS 11, tvOS 14, watchOS 7, *)
-extension WithViewStore where State: Equatable, Content: ToolbarContent {
+extension WithViewStore where ViewState: Equatable, Content: ToolbarContent {
   /// Initializes a structure that transforms a store into an observable view store in order to
   /// compute toolbar content from equatable store state.
   ///
@@ -813,17 +962,17 @@ extension WithViewStore where State: Equatable, Content: ToolbarContent {
        """
   )
   public init<ObservedContent>(
-    _ store: Store<State, Action>,
+    _ store: Store<ViewState, ViewAction>,
     file: StaticString = #fileID,
     line: UInt = #line,
-    @ToolbarContentBuilder content: @escaping (ViewStore<State, Action>) -> ObservedContent
-  ) where Content == _StateObjectViewStore<State, Action, ObservedContent> {
+    @ToolbarContentBuilder content: @escaping (ViewStore<ViewState, ViewAction>) -> ObservedContent
+  ) where Content == _StateObjectViewStore<ViewState, ViewAction, ObservedContent> {
     self.init(store, removeDuplicates: ==, file: file, line: line, content: content)
   }
 }
 
 @available(iOS 14, macOS 11, tvOS 14, watchOS 7, *)
-extension WithViewStore where State == Void, Content: ToolbarContent {
+extension WithViewStore where ViewState == Void, Content: ToolbarContent {
   /// Initializes a structure that transforms a store into an observable view store in order to
   /// compute toolbar content from void store state.
   ///
@@ -841,11 +990,11 @@ extension WithViewStore where State == Void, Content: ToolbarContent {
        """
   )
   public init<ObservedContent>(
-    _ store: Store<State, Action>,
+    _ store: Store<ViewState, ViewAction>,
     file: StaticString = #fileID,
     line: UInt = #line,
-    @ToolbarContentBuilder content: @escaping (ViewStore<State, Action>) -> ObservedContent
-  ) where Content == _StateObjectViewStore<State, Action, ObservedContent> {
+    @ToolbarContentBuilder content: @escaping (ViewStore<ViewState, ViewAction>) -> ObservedContent
+  ) where Content == _StateObjectViewStore<ViewState, ViewAction, ObservedContent> {
     self.init(store, removeDuplicates: ==, file: file, line: line, content: content)
   }
 }
