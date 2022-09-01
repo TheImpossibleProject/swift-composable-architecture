@@ -26,7 +26,7 @@ struct BindingBasicsState: Equatable {
   var toggleIsOn = false
 }
 
-enum BindingBasicsAction {
+enum BindingBasicsAction: Equatable {
   case sliderValueChanged(Double)
   case stepCountChanged(Int)
   case textChanged(String)
@@ -63,7 +63,7 @@ struct BindingBasicsView: View {
   let store: Store<BindingBasicsState, BindingBasicsAction>
 
   var body: some View {
-    WithViewStore(self.store) { viewStore in
+    WithViewStore(self.store, observe: { $0 }) { viewStore in
       Form {
         Section {
           AboutView(readMe: readMe)

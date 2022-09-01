@@ -41,7 +41,7 @@ public struct LoginView: View {
   }
 
   public var body: some View {
-    WithViewStore(self.store.scope(state: ViewState.init, action: LoginAction.init)) { viewStore in
+    WithViewStore(self.store, observe: ViewState.init, send: LoginAction.init) { viewStore in
       Form {
         Text(
           """

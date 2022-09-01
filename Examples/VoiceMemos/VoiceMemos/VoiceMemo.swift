@@ -29,8 +29,8 @@ struct VoiceMemoState: Equatable, Identifiable {
 
 enum VoiceMemoAction: Equatable {
   case audioPlayerClient(TaskResult<Bool>)
-  case delete
   case playButtonTapped
+  case task
   case timerUpdated(TimeInterval)
   case titleTextFieldChanged(String)
 }
@@ -50,9 +50,6 @@ let voiceMemoReducer = Reducer<
   switch action {
   case .audioPlayerClient:
     state.mode = .notPlaying
-    return .cancel(id: PlayID.self)
-
-  case .delete:
     return .cancel(id: PlayID.self)
 
   case .playButtonTapped:
@@ -78,6 +75,12 @@ let voiceMemoReducer = Reducer<
       return .cancel(id: PlayID.self)
     }
 
+  case .task:
+    return .fireAndForget {
+      try? await Task.never()
+      await Task.cancel(id: PlayID.self)
+    }
+
   case let .timerUpdated(time):
     switch state.mode {
     case .notPlaying:
@@ -97,7 +100,7 @@ struct VoiceMemoView: View {
   let store: Store<VoiceMemoState, VoiceMemoAction>
 
   var body: some View {
-    WithViewStore(store) { viewStore in
+    WithViewStore(store, observe: { $0 }) { viewStore in
       let currentTime =
         viewStore.mode.progress.map { $0 * viewStore.duration } ?? viewStore.duration
       HStack {
@@ -133,6 +136,9 @@ struct VoiceMemoView: View {
           ),
         alignment: .leading
       )
+      .task {
+        await viewStore.send(.task).finish()
+      }
     }
   }
 }

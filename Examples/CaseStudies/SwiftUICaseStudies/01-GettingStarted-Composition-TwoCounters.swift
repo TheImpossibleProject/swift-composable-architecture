@@ -13,7 +13,7 @@ struct TwoCountersState: Equatable {
   var counter2 = CounterState()
 }
 
-enum TwoCountersAction {
+enum TwoCountersAction: Equatable {
   case counter1(CounterAction)
   case counter2(CounterAction)
 }

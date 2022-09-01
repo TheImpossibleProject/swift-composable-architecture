@@ -13,7 +13,7 @@ struct PresentAndLoadState: Equatable {
   var isSheetPresented = false
 }
 
-enum PresentAndLoadAction {
+enum PresentAndLoadAction: Equatable {
   case optionalCounter(CounterAction)
   case setSheet(isPresented: Bool)
   case setSheetIsPresentedDelayCompleted
@@ -66,7 +66,7 @@ struct PresentAndLoadView: View {
   let store: Store<PresentAndLoadState, PresentAndLoadAction>
 
   var body: some View {
-    WithViewStore(self.store) { viewStore in
+    WithViewStore(self.store, observe: { $0 }) { viewStore in
       Form {
         Section {
           AboutView(readMe: readMe)

@@ -85,12 +85,12 @@ struct FavoriteButton<ID: Hashable>: View {
   let store: Store<FavoriteState<ID>, FavoriteAction>
 
   var body: some View {
-    WithViewStore(self.store) { viewStore in
+    WithViewStore(self.store, observe: \.isFavorite) { viewStore in
       Button {
         viewStore.send(.buttonTapped)
       } label: {
         Image(systemName: "heart")
-          .symbolVariant(viewStore.isFavorite ? .fill : .none)
+          .symbolVariant(viewStore.state ? .fill : .none)
       }
       .alert(self.store.scope(state: \.alert), dismiss: .alertDismissed)
     }
@@ -123,9 +123,9 @@ struct EpisodeView: View {
   let store: Store<EpisodeState, EpisodeAction>
 
   var body: some View {
-    WithViewStore(self.store) { viewStore in
+    WithViewStore(self.store, observe: \.title) { viewStore in
       HStack(alignment: .firstTextBaseline) {
-        Text(viewStore.title)
+        Text(viewStore.state)
 
         Spacer()
 

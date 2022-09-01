@@ -3,7 +3,7 @@ import ComposableArchitecture
 import UIKit
 import XCTestDynamicOverlay
 
-struct RootState {
+struct RootState: Equatable {
   var alertAndConfirmationDialog = AlertAndConfirmationDialogState()
   var animation = AnimationsState()
   var bindingBasics = BindingBasicsState()
@@ -34,7 +34,7 @@ struct RootState {
   var webSocket = WebSocketState()
 }
 
-enum RootAction {
+enum RootAction: Equatable {
   case alertAndConfirmationDialog(AlertAndConfirmationDialogAction)
   case animation(AnimationsAction)
   case bindingBasics(BindingBasicsAction)

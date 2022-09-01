@@ -16,7 +16,7 @@ struct LoadThenPresentState: Equatable {
   var isSheetPresented: Bool { self.optionalCounter != nil }
 }
 
-enum LoadThenPresentAction {
+enum LoadThenPresentAction: Equatable {
   case onDisappear
   case optionalCounter(CounterAction)
   case setSheet(isPresented: Bool)
@@ -73,7 +73,7 @@ struct LoadThenPresentView: View {
   let store: Store<LoadThenPresentState, LoadThenPresentAction>
 
   var body: some View {
-    WithViewStore(self.store) { viewStore in
+    WithViewStore(self.store, observe: { $0 }) { viewStore in
       Form {
         Section {
           AboutView(readMe: readMe)

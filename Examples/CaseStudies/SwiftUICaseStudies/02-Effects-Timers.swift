@@ -17,7 +17,7 @@ struct TimersState: Equatable {
   var secondsElapsed = 0
 }
 
-enum TimersAction {
+enum TimersAction: Equatable {
   case timerTicked
   case toggleTimerButtonTapped
 }
@@ -54,7 +54,7 @@ struct TimersView: View {
   let store: Store<TimersState, TimersAction>
 
   var body: some View {
-    WithViewStore(store) { viewStore in
+    WithViewStore(store, observe: { $0 }) { viewStore in
       Form {
         AboutView(readMe: readMe)
 

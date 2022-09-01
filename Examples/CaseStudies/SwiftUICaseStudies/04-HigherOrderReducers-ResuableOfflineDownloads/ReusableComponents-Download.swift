@@ -45,7 +45,7 @@ struct CityMapState: Equatable, Identifiable {
   }
 }
 
-enum CityMapAction {
+enum CityMapAction: Equatable {
   case downloadComponent(DownloadComponentAction)
 }
 
@@ -79,14 +79,14 @@ struct CityMapRowView: View {
   let store: Store<CityMapState, CityMapAction>
 
   var body: some View {
-    WithViewStore(self.store) { viewStore in
+    WithViewStore(self.store, observe: \.cityMap.title) { viewStore in
       HStack {
         NavigationLink(
           destination: CityMapDetailView(store: self.store)
         ) {
           HStack {
             Image(systemName: "map")
-            Text(viewStore.cityMap.title)
+            Text(viewStore.state)
           }
           .layoutPriority(1)
 
@@ -109,7 +109,7 @@ struct CityMapDetailView: View {
   let store: Store<CityMapState, CityMapAction>
 
   var body: some View {
-    WithViewStore(self.store) { viewStore in
+    WithViewStore(self.store, observe: { $0 }) { viewStore in
       VStack(spacing: 32) {
         Text(viewStore.cityMap.blurb)
 
@@ -140,11 +140,11 @@ struct CityMapDetailView: View {
   }
 }
 
-struct MapAppState {
+struct MapAppState: Equatable {
   var cityMaps: IdentifiedArrayOf<CityMapState>
 }
 
-enum MapAppAction {
+enum MapAppAction: Equatable {
   case cityMaps(id: CityMapState.ID, action: CityMapAction)
 }
 

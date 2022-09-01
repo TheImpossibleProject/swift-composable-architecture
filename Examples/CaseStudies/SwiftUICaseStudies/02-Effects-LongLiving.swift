@@ -21,7 +21,7 @@ struct LongLivingEffectsState: Equatable {
   var screenshotCount = 0
 }
 
-enum LongLivingEffectsAction {
+enum LongLivingEffectsAction: Equatable {
   case task
   case userDidTakeScreenshotNotification
 }
@@ -56,7 +56,7 @@ struct LongLivingEffectsView: View {
   let store: Store<LongLivingEffectsState, LongLivingEffectsAction>
 
   var body: some View {
-    WithViewStore(self.store) { viewStore in
+    WithViewStore(self.store, observe: { $0 }) { viewStore in
       Form {
         Section {
           AboutView(readMe: readMe)

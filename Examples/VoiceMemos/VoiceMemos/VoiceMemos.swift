@@ -18,6 +18,7 @@ struct VoiceMemosState: Equatable {
 
 enum VoiceMemosAction: Equatable {
   case alertDismissed
+  case delete(IndexSet)
   case openSettingsButtonTapped
   case recordButtonTapped
   case recordPermissionResponse(Bool)
@@ -123,8 +124,8 @@ let voiceMemosReducer = Reducer<VoiceMemosState, VoiceMemosAction, VoiceMemosEnv
       state.alert = AlertState(title: TextState("Voice memo playback failed."))
       return .none
 
-    case let .voiceMemo(id: id, action: .delete):
-      state.voiceMemos.remove(id: id)
+    case let .delete(indexSet):
+      state.voiceMemos.remove(atOffsets: indexSet)
       return .none
 
     case let .voiceMemo(id: tappedId, action: .playButtonTapped):
@@ -143,7 +144,7 @@ struct VoiceMemosView: View {
   let store: Store<VoiceMemosState, VoiceMemosAction>
 
   var body: some View {
-    WithViewStore(self.store) { viewStore in
+    WithViewStore(self.store, observe: \.audioRecorderPermission) { viewStore in
       NavigationView {
         VStack {
           List {
@@ -152,11 +153,7 @@ struct VoiceMemosView: View {
             ) {
               VoiceMemoView(store: $0)
             }
-            .onDelete { indexSet in
-              for index in indexSet {
-                viewStore.send(.voiceMemo(id: viewStore.voiceMemos[index].id, action: .delete))
-              }
-            }
+            .onDelete { viewStore.send(.delete($0)) }
           }
 
           IfLetStore(
@@ -164,7 +161,7 @@ struct VoiceMemosView: View {
           ) { store in
             RecordingMemoView(store: store)
           } else: {
-            RecordButton(permission: viewStore.audioRecorderPermission) {
+            RecordButton(permission: viewStore.state) {
               viewStore.send(.recordButtonTapped, animation: .spring())
             } settingsAction: {
               viewStore.send(.openSettingsButtonTapped)
