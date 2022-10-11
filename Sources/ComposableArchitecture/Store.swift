@@ -136,6 +136,13 @@ public final class Store<State, Action> {
     private let mainThreadChecksEnabled: Bool
   #endif
 
+  public var stateValue: State {
+      state.value
+  }
+    
+  /// Additional action handler to handle actions outside the reducer
+  public var onAction: ((Action) -> Void)?
+
   /// Initializes a store from an initial state and a reducer.
   ///
   /// - Parameters:
@@ -353,6 +360,8 @@ public final class Store<State, Action> {
       #else
         let effect = self.reducer(&currentState, action)
       #endif
+
+      onAction?(action)
 
       switch effect.operation {
       case .none:
