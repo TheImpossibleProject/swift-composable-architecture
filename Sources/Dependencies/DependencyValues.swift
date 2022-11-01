@@ -262,13 +262,7 @@ public struct DependencyValues: Sendable {
           var currentDependency = Self.currentDependency
           currentDependency.name = function
           return Self.$currentDependency.withValue(currentDependency) {
-            self.cachedValues.value(
-              for: Key.self,
-              context: context,
-              file: file,
-              function: function,
-              line: line
-            )
+            Key.testValue
           }
         }
       }
