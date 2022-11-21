@@ -12,13 +12,13 @@
       set { self[SuspendingClockKey.self] = newValue }
     }
 
-    private enum ContinuousClockKey: DependencyKey {
-      static let liveValue: any Clock<Duration> = ContinuousClock()
-      static let testValue: any Clock<Duration> = UnimplementedClock(name: "ContinuousClock")
+    public enum ContinuousClockKey: DependencyKey {
+      public static let liveValue: any Clock<Duration> = ContinuousClock()
+      public static let testValue: any Clock<Duration> = UnimplementedClock(name: "ContinuousClock")
     }
-    private enum SuspendingClockKey: DependencyKey {
-      static let liveValue: any Clock<Duration> = SuspendingClock()
-      static let testValue: any Clock<Duration> = UnimplementedClock(name: "SuspendingClock")
+    public enum SuspendingClockKey: DependencyKey {
+      public static let liveValue: any Clock<Duration> = SuspendingClock()
+      public static let testValue: any Clock<Duration> = UnimplementedClock(name: "SuspendingClock")
     }
   }
 #endif

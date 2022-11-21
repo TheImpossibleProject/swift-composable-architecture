@@ -42,9 +42,9 @@ extension DependencyValues {
     set { self[LocaleKey.self] = newValue }
   }
 
-  private enum LocaleKey: DependencyKey {
-    static let liveValue = Locale.autoupdatingCurrent
-    static var testValue: Locale {
+  public enum LocaleKey: DependencyKey {
+    public static let liveValue = Locale.autoupdatingCurrent
+    public static var testValue: Locale {
       if !DependencyValues.isSetting {
         XCTFail(#"Unimplemented: @Dependency(\.locale)"#)
       }

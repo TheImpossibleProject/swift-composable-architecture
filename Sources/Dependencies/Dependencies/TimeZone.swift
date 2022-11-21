@@ -21,9 +21,9 @@ extension DependencyValues {
     set { self[TimeZoneKey.self] = newValue }
   }
 
-  private enum TimeZoneKey: DependencyKey {
-    static let liveValue = TimeZone.autoupdatingCurrent
-    static var testValue: TimeZone {
+  public enum TimeZoneKey: DependencyKey {
+    public static let liveValue = TimeZone.autoupdatingCurrent
+    public static var testValue: TimeZone {
       if !DependencyValues.isSetting {
         XCTFail(#"Unimplemented: @Dependency(\.timeZone)"#)
       }

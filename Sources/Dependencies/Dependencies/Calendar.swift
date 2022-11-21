@@ -30,9 +30,9 @@ extension DependencyValues {
     set { self[CalendarKey.self] = newValue }
   }
 
-  private enum CalendarKey: DependencyKey {
-    static let liveValue = Calendar.autoupdatingCurrent
-    static var testValue: Calendar {
+  public enum CalendarKey: DependencyKey {
+    public static let liveValue = Calendar.autoupdatingCurrent
+    public static var testValue: Calendar {
       if !DependencyValues.isSetting {
         XCTFail(#"Unimplemented: @Dependency(\.calendar)"#)
       }

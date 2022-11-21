@@ -88,9 +88,9 @@
       set { self[MainQueueKey.self] = newValue }
     }
 
-    private enum MainQueueKey: DependencyKey {
-      static let liveValue = AnySchedulerOf<DispatchQueue>.main
-      static let testValue = AnySchedulerOf<DispatchQueue>
+    public enum MainQueueKey: DependencyKey {
+      public static let liveValue = AnySchedulerOf<DispatchQueue>.main
+      public static let testValue = AnySchedulerOf<DispatchQueue>
         .unimplemented(#"@Dependency(\.mainQueue)"#)
     }
   }
