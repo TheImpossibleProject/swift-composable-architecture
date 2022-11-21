@@ -90,7 +90,7 @@
 
     public enum MainQueueKey: DependencyKey {
       public static let liveValue = AnySchedulerOf<DispatchQueue>.main
-      public static let testValue = AnySchedulerOf<DispatchQueue>
+      public static var testValue = AnySchedulerOf<DispatchQueue>
         .unimplemented(#"@Dependency(\.mainQueue)"#)
     }
   }

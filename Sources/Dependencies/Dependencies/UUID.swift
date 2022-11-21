@@ -76,7 +76,7 @@ extension DependencyValues {
 
   private enum UUIDGeneratorKey: DependencyKey {
     static let liveValue = UUIDGenerator { UUID() }
-    static let testValue = UUIDGenerator {
+    static var testValue = UUIDGenerator {
       XCTFail(#"Unimplemented: @Dependency(\.uuid)"#)
       return UUID()
     }

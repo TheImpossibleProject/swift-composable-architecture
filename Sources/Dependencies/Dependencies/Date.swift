@@ -45,7 +45,7 @@ extension DependencyValues {
 
   public enum DateGeneratorKey: DependencyKey {
     public static let liveValue = DateGenerator { Date() }
-    public static let testValue = DateGenerator {
+    public static var testValue = DateGenerator {
       XCTFail(#"Unimplemented: @Dependency(\.date)"#)
       return Date()
     }

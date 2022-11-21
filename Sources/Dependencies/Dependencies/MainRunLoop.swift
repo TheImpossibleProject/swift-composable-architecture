@@ -90,7 +90,7 @@
 
     public enum MainRunLoopKey: DependencyKey {
       public static let liveValue = AnySchedulerOf<RunLoop>.main
-      public static let testValue = AnySchedulerOf<RunLoop>.unimplemented(#"@Dependency(\.mainRunLoop)"#)
+      public static var testValue = AnySchedulerOf<RunLoop>.unimplemented(#"@Dependency(\.mainRunLoop)"#)
     }
   }
 #endif

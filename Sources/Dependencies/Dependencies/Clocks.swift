@@ -14,11 +14,11 @@
 
     public enum ContinuousClockKey: DependencyKey {
       public static let liveValue: any Clock<Duration> = ContinuousClock()
-      public static let testValue: any Clock<Duration> = UnimplementedClock(name: "ContinuousClock")
+      public static var testValue: any Clock<Duration> = UnimplementedClock(name: "ContinuousClock")
     }
     public enum SuspendingClockKey: DependencyKey {
       public static let liveValue: any Clock<Duration> = SuspendingClock()
-      public static let testValue: any Clock<Duration> = UnimplementedClock(name: "SuspendingClock")
+      public static var testValue: any Clock<Duration> = UnimplementedClock(name: "SuspendingClock")
     }
   }
 #endif

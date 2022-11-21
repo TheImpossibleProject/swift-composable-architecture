@@ -69,7 +69,7 @@ extension DependencyValues {
 
   public enum WithRandomNumberGeneratorKey: DependencyKey {
     public static let liveValue = WithRandomNumberGenerator(SystemRandomNumberGenerator())
-    public static let testValue = WithRandomNumberGenerator(UnimplementedRandomNumberGenerator())
+    public static var testValue = WithRandomNumberGenerator(UnimplementedRandomNumberGenerator())
   }
 }
 
