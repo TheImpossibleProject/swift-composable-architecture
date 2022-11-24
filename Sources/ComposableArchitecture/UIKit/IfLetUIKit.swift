@@ -48,7 +48,7 @@ extension Store {
   public func ifLet<Wrapped>(
     then unwrap: @escaping (Store<Wrapped, Action>) -> Void,
     else: @escaping () -> Void = {}
-  ) -> Cancellable where State == Wrapped? {
+  ) -> AnyCancellable where State == Wrapped? {
     return self.state
       .removeDuplicates(by: { ($0 != nil) == ($1 != nil) })
       .sink { state in
