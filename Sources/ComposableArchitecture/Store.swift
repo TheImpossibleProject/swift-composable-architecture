@@ -142,6 +142,10 @@ public final class Store<State, Action> {
       
   /// Additional action handler to handle actions outside the reducer
   public var onAction: ((Action) -> Void)?
+    
+    
+
+  private var toChildAdditionalActionHandler: ((Action) -> Void)?
 
   /// Initializes a store from an initial state and a reducer.
   ///
@@ -311,6 +315,26 @@ public final class Store<State, Action> {
         .rescope(self, state: toChildState, action: fromChildAction)
     #endif
   }
+    
+  public func scope<ChildState, ChildAction>(
+      state toChildState: @escaping (State) -> ChildState,
+      fromChildAction: @escaping (ChildAction) -> Action,
+      toChildAction: @escaping (Action) -> ChildAction?
+  ) -> Store<ChildState, ChildAction> {
+    self.threadCheck(status: .scope)
+
+    #if swift(>=5.7)
+    let childStore = self.reducer.rescope(self, state: toChildState, action: fromChildAction)
+    toChildAdditionalActionHandler = { [weak childStore] act in
+        guard let childAction = toChildAction(act) else { return }
+        childStore?.onAction?(childAction)
+    }
+    return childStore
+    #else
+    return (self.scope ?? StoreScope(root: self))
+        .rescope(self, state: toChildState, action: fromChildAction)
+    #endif
+  }
 
   /// Scopes the store to one that exposes child state.
   ///
@@ -362,6 +386,7 @@ public final class Store<State, Action> {
       #endif
 
       onAction?(action)
+      toChildAdditionalActionHandler?(action)
         
       switch effect.operation {
       case .none:
