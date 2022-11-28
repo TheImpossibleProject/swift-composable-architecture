@@ -323,6 +323,19 @@ public final class Store<State, Action> {
   ) -> Store<ChildState, Action> {
     self.scope(state: toChildState, action: { $0 })
   }
+    
+  /// Scopes the store to one that exposes child action.
+  ///
+  /// A version of ``scope(state:action:)`` that leaves the state type unchanged.
+  ///
+  /// - Parameter fromChildAction: A function that transforms `ChildAction` into `Action`.
+  /// - Returns: A new store with its domain (state and action) transformed.
+  public func scope<ChildAction>(
+      action fromChildAction: @escaping (ChildAction) -> Action
+  ) -> Store<State, ChildAction> {
+      self.scope(state: { $0 }, action: fromChildAction)
+  }
+
 
   @_spi(Internals) public func send(
     _ action: Action,
