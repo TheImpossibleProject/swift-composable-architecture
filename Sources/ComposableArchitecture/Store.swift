@@ -135,6 +135,13 @@ public final class Store<State, Action> {
   #if DEBUG
     private let mainThreadChecksEnabled: Bool
   #endif
+    
+  public var stateValue: State {
+      state.value
+  }
+      
+  /// Additional action handler to handle actions outside the reducer
+  public var onAction: ((Action) -> Void)?
 
   /// Initializes a store from an initial state and a reducer.
   ///
@@ -325,6 +332,18 @@ public final class Store<State, Action> {
   ) -> Store<ChildState, Action> {
     self.scope(state: toChildState, action: { $0 })
   }
+    
+  /// Scopes the store to one that exposes child action.
+  ///
+  /// A version of ``scope(state:action:)`` that leaves the state type unchanged.
+  ///
+  /// - Parameter fromChildAction: A function that transforms `ChildAction` into `Action`.
+  /// - Returns: A new store with its domain (state and action) transformed.
+  public func scope<ChildAction>(
+      action fromChildAction: @escaping (ChildAction) -> Action
+  ) -> Store<State, ChildAction> {
+      self.scope(state: { $0 }, action: fromChildAction)
+  }
 
   func filter(
     _ isSent: @escaping (State, Action) -> Bool
@@ -375,6 +394,8 @@ public final class Store<State, Action> {
       #else
         let effect = self.reducer(&currentState, action)
       #endif
+      
+      onAction?(action)
 
       switch effect.operation {
       case .none:
