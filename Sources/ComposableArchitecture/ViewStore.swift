@@ -132,6 +132,9 @@ public final class ViewStore<ViewState, ViewAction>: ObservableObject {
           print(store)
           return store.send(fromViewAction($0), originatingFrom: nil)
       }
+      
+      
+      
     self._state = CurrentValueRelay(toViewState(store.state.value))
     self._isInvalidated = store._isInvalidated
     self.viewCancellable = store.state
