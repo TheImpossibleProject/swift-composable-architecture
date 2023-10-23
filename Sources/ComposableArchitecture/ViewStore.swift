@@ -91,7 +91,10 @@ public final class ViewStore<ViewState, ViewAction>: ObservableObject {
     observe toViewState: @escaping (_ state: State) -> ViewState,
     removeDuplicates isDuplicate: @escaping (_ lhs: ViewState, _ rhs: ViewState) -> Bool
   ) {
-    self._send = { store.send($0, originatingFrom: nil) }
+      self._send = {
+          print(store)
+          return store.send($0, originatingFrom: nil)
+      }
     self._state = CurrentValueRelay(toViewState(store.state.value))
     self._isInvalidated = store._isInvalidated
     self.viewCancellable = store.state
@@ -125,7 +128,10 @@ public final class ViewStore<ViewState, ViewAction>: ObservableObject {
     send fromViewAction: @escaping (_ viewAction: ViewAction) -> Action,
     removeDuplicates isDuplicate: @escaping (_ lhs: ViewState, _ rhs: ViewState) -> Bool
   ) {
-    self._send = { store.send(fromViewAction($0), originatingFrom: nil) }
+      self._send = {
+          print(store)
+          return store.send(fromViewAction($0), originatingFrom: nil)
+      }
     self._state = CurrentValueRelay(toViewState(store.state.value))
     self._isInvalidated = store._isInvalidated
     self.viewCancellable = store.state
