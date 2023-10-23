@@ -92,7 +92,7 @@ public final class ViewStore<ViewState, ViewAction>: ObservableObject {
     removeDuplicates isDuplicate: @escaping (_ lhs: ViewState, _ rhs: ViewState) -> Bool
   ) {
       self._send = {
-          print(store)
+          print(store, "🫣")
           return store.send($0, originatingFrom: nil)
       }
     self._state = CurrentValueRelay(toViewState(store.state.value))
@@ -129,7 +129,7 @@ public final class ViewStore<ViewState, ViewAction>: ObservableObject {
     removeDuplicates isDuplicate: @escaping (_ lhs: ViewState, _ rhs: ViewState) -> Bool
   ) {
       self._send = {
-          print(store)
+          print(store, "🌈")
           return store.send(fromViewAction($0), originatingFrom: nil)
       }
       
